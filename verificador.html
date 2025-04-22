@@ -1,0 +1,118 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verificador de Stake Mines</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #1e1e1e;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    input, button {
+      padding: 10px;
+      margin: 5px;
+      border: none;
+      border-radius: 5px;
+    }
+    input {
+      width: 300px;
+    }
+    button {
+      background-color: #00b894;
+      color: #fff;
+      cursor: pointer;
+    }
+    #resultado {
+      margin-top: 20px;
+      font-size: 16px;
+      white-space: pre-wrap;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(5, 60px);
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .cell {
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #444;
+      border-radius: 5px;
+      background-color: #2d3436;
+    }
+    .mine {
+      background-color: #d63031;
+    }
+  </style>
+</head>
+<body>
+  <h1>Verificador de Stake Mines</h1>
+  <input type="text" id="serverSeed" placeholder="Server Seed revelada">
+  <input type="text" id="clientSeed" placeholder="Client Seed">
+  <input type="number" id="nonce" placeholder="Nonce">
+  <input type="number" id="mines" placeholder="Cantidad de minas" min="1" max="24">
+  <button onclick="verificar()">Verificar</button>
+
+  <div id="resultado"></div>
+  <div class="grid" id="grid"></div>
+
+  <script>
+    function verificar() {
+      const serverSeed = document.getElementById('serverSeed').value;
+      const clientSeed = document.getElementById('clientSeed').value;
+      const nonce = parseInt(document.getElementById('nonce').value);
+      const mineCount = parseInt(document.getElementById('mines').value);
+      const gridEl = document.getElementById('grid');
+      gridEl.innerHTML = '';
+
+      if (!serverSeed || !clientSeed || isNaN(nonce) || isNaN(mineCount)) {
+        alert('Por favor completá todos los campos.');
+        return;
+      }
+
+      const input = `${serverSeed}:${clientSeed}:${nonce}`;
+      const hash = CryptoJS.SHA256(input).toString();
+
+      let numbers = [];
+      let i = 0;
+      while (numbers.length < mineCount) {
+        const subHash = CryptoJS.SHA256(hash + ":" + i).toString();
+        for (let j = 0; j < subHash.length && numbers.length < mineCount; j += 8) {
+          const piece = subHash.substr(j, 8);
+          const num = parseInt(piece, 16);
+          const position = num % 25;
+          if (!numbers.includes(position)) {
+            numbers.push(position);
+          }
+        }
+        i++;
+      }
+
+      for (let i = 0; i < 25; i++) {
+        const div = document.createElement('div');
+        div.classList.add('cell');
+        if (numbers.includes(i)) {
+          div.classList.add('mine');
+          div.textContent = '💣';
+        } else {
+          div.textContent = i + 1;
+        }
+        gridEl.appendChild(div);
+      }
+
+      document.getElementById('resultado').innerText = `Minas en las posiciones: ${numbers.map(n => n + 1).join(', ')}`;
+    }
+  </script>
+</body>
+</html>
